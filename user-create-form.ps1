@@ -350,8 +350,10 @@ $company_ComboBox.width          = 217
 $company_ComboBox.height         = 20
 $company_ComboBox.location       = New-Object System.Drawing.Point(136,109)
 $company_ComboBox.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-$company_ComboBox.DataSource = @('АО «Завод «Киров-Энергомаш»','АО «Металлургический завод «Петросталь»','АО Завод «Универсалмаш»','АО «КировТЭК»','АО «ЭСК»','АО «Тетрамет»','ПАО «Кировский завод»','АО «Локомотив»','АО «Центр МИОТ»','АО «Петербургский тракторный завод»','АО «Промышленный комплекс «Энергия»','ООО "Охранная организация "Путиловец"')
-
+#очищаем список
+$company_ComboBox.Items.Clear()
+#заполняем список чтобы по умолчанию не был выбран ни один эдемент
+$company_ComboBox.Items.AddRange(@('АО «Рога и копыта»','АО «Ромашка»','АО Завод «Бабайкин»'))
 
 $cancel_Button1                  = New-Object system.Windows.Forms.Button
 $cancel_Button1.text             = "Отмена"
@@ -384,6 +386,15 @@ $phone_label.height              = 10
 $phone_label.location            = New-Object System.Drawing.Point(37,145)
 $phone_label.Font                = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-$Mform.controls.AddRange(@($create_button,$mail_CheckBox,$fio_label,$fio_TextBox,$jtitle_label,$jtitle_TextBox,$dep_label,$dep_textBox,$company_label,$company_ComboBox,$cancel_Button1,$LogBox,$phone_textBox,$phone_label))
+$clear_button                    = New-Object system.Windows.Forms.Button
+$clear_button.text               = "Очистить"
+$clear_button.width              = 113
+$clear_button.height             = 33
+$clear_button.location           = New-Object System.Drawing.Point(40,216)
+$clear_button.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+#очищаем поля по клику
+$clear_button.Add_Click({$fio_TextBox.Clear(),$jtitle_TextBox.Clear(),$dep_textBox.Clear(),$phone_textBox.Clear()})
+
+$Mform.controls.AddRange(@($create_button,$mail_CheckBox,$fio_label,$fio_TextBox,$jtitle_label,$jtitle_TextBox,$dep_label,$dep_textBox,$company_label,$company_ComboBox,$cancel_Button1,$LogBox,$phone_textBox,$phone_label,$clear_button))
 
 $Mform.ShowDialog()
