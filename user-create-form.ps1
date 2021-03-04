@@ -110,8 +110,6 @@ $mailboxDB = "ExchangeBase"
 $pass = ConvertTo-SecureString -String "12345678" -AsPlainText -Force
 #OU куда будут создаваться учетки
 $OU = "OU=OUnit,DC=domain,DC=local"
-#место где будет создаваться пользовательский диск
-$zdisk = "\\fileerver\users\"
 #сплитуем ФИО что бы разделить на отдельные фамилию, имя, отчество
 $fioarray = $fio_TextBox.Text.split(" ", 3)
 $surname = $fioarray[0]
@@ -124,7 +122,10 @@ Switch ($company_ComboBox.SelectedItem)
     'АО «Рога и копыта»'{$group = "roga_users"}
     'АО «Ромашка»'{$group = "romashka_users"}
     'АО Завод «Бабайкин»'{$group = "babayka_users"}
-   
+    #нужно для создания правильного личного диска
+    'АО «Рога и копыта»'{$zdisk = "\\fileerver\roga_users\"}
+    'АО «Ромашка»'{$zdisk = "\\fileerver\romashka_users\"}
+    'АО Завод «Бабайкин»'{$zdisk = "\\fileerver\babayka_users\"}
     default {$group = $null
     LogAdd ("[WARNING] Группа не выбрана")
             }
@@ -138,8 +139,15 @@ $login = TranslitToLAT ($surname)
  {
  #создаем upn на основе логани
     $upn = $login + "@domain.local" 
-    #создаем окончательно путь к пользовательскому диску
-    $zdisk = $zdisk + $login
+  #Проверяем существует ли путь к пользовательскому диску, если он пустой, то диск не будет создан
+    if ($zdisk -eq $null)
+    {
+        $zdisk = $null
+    }
+    else
+    {
+        $zdisk = $zdisk + $login
+    }
     #создаем пользователя
     New-ADUser -Name $fio_TextBox.Text -DisplayName $fio_TextBox.Text -GivenName $name -Surname $surname -SamAccountName $login -UserPrincipalName $upn -Path $OU -Department $dep_textBox.text -Company $company_ComboBox.SelectedItem -Title $jtitle_TextBox.Text -OfficePhone $phone_textBox.Text -Office $company_ComboBox.SelectedItem -Description $jtitle_TextBox.Text -HomeDrive Z: -HomeDirectory $zdisk -AccountPassword $pass -ChangePasswordAtLogon $true -Enabled $true
     LogAdd ("[OK] Присвоен логин:  " + $login)
@@ -152,10 +160,18 @@ $login = TranslitToLAT ($surname)
     #проверяем существует ли такой логин
     if ((Get-ADUser -f 'sAMAccountName -eq $login' -Server DC.domain.local:3268) -eq $null)
     {
-    $upn = $login + "@domain.local" 
-    $zdisk = $zdisk + $login
-    New-ADUser -Name $fio_TextBox.Text -DisplayName $fio_TextBox.Text -GivenName $name -Surname $surname -SamAccountName $login -UserPrincipalName $upn -Path $OU -Department $dep_textBox.text -Company $company_ComboBox.SelectedItem -Title $jtitle_TextBox.Text -OfficePhone $phone_textBox.Text -Office $company_ComboBox.SelectedItem -Description $jtitle_TextBox.Text -HomeDrive Z: -HomeDirectory $zdisk -AccountPassword $pass -ChangePasswordAtLogon $true -Enabled $true
-    LogAdd ("[OK] Присвоен логин:  " + $login)  
+    	$upn = $login + "@domain.local" 
+   #Проверяем существует ли путь к пользовательскому диску, если он пустой, то диск не будет создан
+    	if ($zdisk -eq $null)
+    	{
+        	$zdisk = $null
+    	}
+    	else
+    	{
+        	$zdisk = $zdisk + $login
+    	}
+    	New-ADUser -Name $fio_TextBox.Text -DisplayName $fio_TextBox.Text -GivenName $name -Surname $surname -SamAccountName $login -UserPrincipalName $upn -Path $OU -Department $dep_textBox.text -Company $company_ComboBox.SelectedItem -Title $jtitle_TextBox.Text -OfficePhone $phone_textBox.Text -Office $company_ComboBox.SelectedItem -Description $jtitle_TextBox.Text -HomeDrive Z: -HomeDirectory $zdisk -AccountPassword $pass -ChangePasswordAtLogon $true -Enabled $true
+    	LogAdd ("[OK] Присвоен логин:  " + $login)  
     }
     else{
         
@@ -166,7 +182,15 @@ $login = TranslitToLAT ($surname)
         if ((Get-ADUser -f 'sAMAccountName -eq $login' -Server DC.domain.local:3268) -eq $null)
         {
            $upn = $login + "@domain.local" 
-           $zdisk = $zdisk + $login
+           #Проверяем существует ли путь к пользовательскому диску, если он пустой, то диск не будет создан
+    		if ($zdisk -eq $null)
+    		{
+        		$zdisk = $null
+    		}
+    		else
+    		{
+        		$zdisk = $zdisk + $login
+    		}
            New-ADUser -Name $fio_TextBox.Text -DisplayName $fio_TextBox.Text -GivenName $name -Surname $surname -SamAccountName $login -UserPrincipalName $upn -Path $OU -Department $dep_textBox.text -Company $company_ComboBox.SelectedItem -Title $jtitle_TextBox.Text -OfficePhone $phone_textBox.Text -Office $company_ComboBox.SelectedItem -Description $jtitle_TextBox.Text -HomeDrive Z: -HomeDirectory $zdisk -AccountPassword $pass -ChangePasswordAtLogon $true -Enabled $true
            LogAdd ("[OK] Присвоен логин:  " + $login)
         }
@@ -183,6 +207,8 @@ $login = TranslitToLAT ($surname)
 
 #проверяем существование пользовательской шары
 sleep 7
+if ($zdisk -like "\\fileserver\*" )
+{
 if(!(Test-Path -Path $zdisk))
         {
         #если нет, то создаем пользовательский диск
@@ -209,6 +235,11 @@ if(!(Test-Path -Path $zdisk))
             #если папка существует, то надо разбираться
             LogAdd ("[ERROR] Такая пользовательская шара уже существует")
         }
+}
+else 
+{
+   LogAdd ("[WARNING] Пользовательская шара не создана")
+}
 
 #если была выбрана группа, то добавляем ее пользователю
 if ($group -ne $null)
